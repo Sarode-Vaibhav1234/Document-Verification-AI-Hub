@@ -60,3 +60,37 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = '/form.html';
     });
 });
+// Add this towards the end of your public/script.js file
+document.addEventListener('DOMContentLoaded', () => {
+    // ... (all your existing code for uploader, uploadButton, etc.)
+
+    const proceedButton = document.getElementById('proceedButton');
+    const validateOfflineButton = document.getElementById('validateOfflineButton'); // Get the new button
+
+    uploadButton.addEventListener('click', async () => {
+        // ... (existing click logic)
+
+        try {
+            // ... (existing try block)
+            
+            // In the success part, make sure both buttons are shown
+            resultContainer.classList.remove('hidden');
+            proceedButton.classList.remove('hidden');
+            validateOfflineButton.classList.remove('hidden'); // Show the new button
+            
+        } catch (error) {
+            // ... (existing catch block)
+        } finally {
+            // ... (existing finally block)
+        }
+    });
+
+    proceedButton.addEventListener('click', () => {
+        window.location.href = '/form.html';
+    });
+
+    // === ADD EVENT LISTENER FOR NEW BUTTON ===
+    validateOfflineButton.addEventListener('click', () => {
+        window.location.href = '/offline-validator.html';
+    });
+});
