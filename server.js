@@ -4,27 +4,26 @@ const multer = require('multer');
 const axios = require('axios');
 const session = require('express-session');
 // Note: Levenshtein is no longer needed as Gemini will handle the similarity logic.
-require('dotenv').config();
+require('dotenv').config(); // ✅ load env variables
 
 // --- Configuration ---
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000; // ✅ dynamic port for Render / cloud
 const upload = multer({ storage: multer.memoryStorage() });
 const SESSION_SECRET = process.env.SESSION_SECRET;
 
 // --- Single API Key Setup ---
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 if (!GEMINI_API_KEY) {
-    console.error("FATAL ERROR: GEMINI_API_KEY is not defined in .env file.");
+    console.error("FATAL ERROR: GEMINI_API_KEY is not defined in environment variables.");
     process.exit(1);
 }
 // The API URL is defined once and used for all requests.
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
-
 // --- Session Middleware Setup ---
 if (!SESSION_SECRET) {
-    console.error("FATAL ERROR: SESSION_SECRET is not defined in .env file.");
+    console.error("FATAL ERROR: SESSION_SECRET is not defined in environment variables.");
     process.exit(1);
 }
 app.use(session({
@@ -32,7 +31,7 @@ app.use(session({
     resave: false,
     saveUninitialized: true,
     cookie: { 
-        secure: false, 
+        secure: false, // Set true if using HTTPS
         httpOnly: true, 
         maxAge: 60 * 60 * 1000 
     }
@@ -100,7 +99,7 @@ app.post('/analyze-document', upload.single('document'), async (req, res) => {
         res.json({ success: true, message: `${docType.replace(/_/g, ' ')} uploaded successfully.`, extractedData: jsonData });
 
     } catch (error) {
-        console.error("Error in /analyze-document:", error.message);
+        console.error("Error in /analyze-document:", error.response ? error.response.data : error.message);
         res.status(500).json({ error: 'Failed to analyze the document.' });
     }
 });
@@ -125,7 +124,7 @@ app.post('/submit-form', (req, res) => {
     });
 });
 
-// --- API Endpoint 4: The NEW, SMARTER Handwritten Form Validation ---
+// --- API Endpoint 4: Validate Handwritten Form ---
 app.post('/validate-handwritten-form', upload.single('handwrittenForm'), async (req, res) => {
     if (!req.session.documentData) {
         return res.status(400).json({ error: 'No master document data found in session. Please upload original documents first.' });
@@ -135,7 +134,6 @@ app.post('/validate-handwritten-form', upload.single('handwrittenForm'), async (
     }
 
     try {
-        // --- AI STEP 1: Extract data from the handwritten form (OCR) ---
         const imageBase64 = req.file.buffer.toString('base64');
         const ocrPrompt = `This is an image of a filled-out form which may be in English or Marathi. Extract all handwritten text entries and their corresponding printed labels. Return the result as a single, flat JSON object where keys are the labels and values are the handwritten entries.`;
         
@@ -146,7 +144,6 @@ app.post('/validate-handwritten-form', upload.single('handwrittenForm'), async (
         let cleanedText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
         const handwrittenData = JSON.parse(cleanedText);
 
-        // --- AI STEP 2: Use Gemini as an "Arbitrator" to compare the two JSONs ---
         const masterData = Object.values(req.session.documentData).reduce((acc, cur) => ({ ...acc, ...cur }), {});
 
         const arbitratorPrompt = `
@@ -170,7 +167,6 @@ Return your analysis ONLY as a valid JSON array of objects. Each object must hav
         cleanedText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
         const comparisonResults = JSON.parse(cleanedText);
 
-        // --- Calculate final score and send back to the client ---
         let totalSimilarity = 0;
         let comparedFields = 0;
 
@@ -197,4 +193,7 @@ Return your analysis ONLY as a valid JSON array of objects. Each object must hav
 // --- Start the Server ---
 app.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`);
+    if (process.env.PORT) {
+        console.log(`✅ Running on Render-assigned port: ${process.env.PORT}`);
+    }
 });
