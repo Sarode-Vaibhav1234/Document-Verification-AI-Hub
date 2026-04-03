@@ -136,8 +136,8 @@ Compares the photo on an ID document against a selfie or live webcam capture. Us
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/YOUR_USERNAME/Document-and-Form-verification-using-AI.git
-cd Document-and-Form-verification-using-AI
+git clone https://github.com/YOUR_USERNAME/Document-Verification-AI-Hub.git
+cd Document-Verification-AI-Hub
 ```
 
 ### 2. Install backend dependencies
