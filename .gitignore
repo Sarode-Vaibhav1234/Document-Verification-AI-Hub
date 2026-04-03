@@ -1,5 +1,4 @@
 # ─── Environment Variables ────────────────────────────────────
-# NEVER commit API keys or secrets
 .env
 .env.local
 .env.production
