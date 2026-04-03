@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Upload government documents (Aadhaar, PAN, certificates) and extract key data automatically using AI OCR.">
+    <title>Step 1: Document Upload — Document AI Hub</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Top navigation bar -->
+    <div class="topbar">
+        <a href="/" class="back-btn">← Home</a>
+        <span class="step-badge">Step 1 of 3</span>
+    </div>
+
+    <div class="container">
+        <h1>📄 Upload Documents</h1>
+        <p>Select a document type, upload the image, and AI will extract the key fields. Upload multiple documents one at a time.</p>
+
+        <!-- Document type selector -->
+        <div class="form-group">
+            <label for="docTypeSelect">Document Type</label>
+            <select id="docTypeSelect">
+                <option value="aadhar">Aadhaar Card</option>
+                <option value="pan">PAN Card</option>
+                <option value="caste_certificate">Caste Certificate</option>
+                <option value="domicile_certificate">Domicile Certificate</option>
+                <option value="marksheet_10th">10th Marksheet</option>
+            </select>
+        </div>
+
+        <!-- Drag-and-drop upload zone -->
+        <div class="file-upload-area" id="dropZone">
+            <span class="upload-icon">📁</span>
+            <input type="file" id="documentUploader" accept="image/jpeg, image/png, image/webp">
+            <label for="documentUploader" class="upload-label">Click to browse or drag & drop</label>
+            <p class="upload-hint">JPEG, PNG, or WebP · Max 5 MB</p>
+        </div>
+        <p id="fileName"></p>
+
+        <!-- Image preview -->
+        <div id="imagePreview" class="hidden">
+            <img id="previewImg" src="" alt="Document preview">
+            <p class="preview-filename" id="previewFilename"></p>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <button id="uploadButton" class="btn" style="width: 100%;">
+                <span>⚡ Analyze Document</span>
+            </button>
+        </div>
+
+        <!-- Spinner loader -->
+        <div id="loader" class="hidden">
+            <div class="spinner"></div>
+            <p>Analyzing with AI — please wait…</p>
+        </div>
+
+        <!-- Results section -->
+        <div id="resultContainer" class="result-container hidden">
+            <h3>✅ Uploaded Documents</h3>
+            <ul id="uploadedDocsList" class="uploaded-docs-list"></ul>
+            <div class="result-actions">
+                <button id="proceedButton" class="btn btn-secondary" style="display:none;">
+                    Proceed to Form →
+                </button>
+                <button id="validateOfflineButton" class="btn" style="display:none;">
+                    ✍️ Validate Handwritten Form →
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

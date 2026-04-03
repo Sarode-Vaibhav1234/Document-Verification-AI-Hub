@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Document AI Hub — Intelligent suite for Aadhaar, PAN, document verification, forgery detection and face match KYC — all running locally.">
+    <title>Document AI Hub — Intelligent Document Verification</title>
+    <link rel="stylesheet" href="home-style.css">
+</head>
+<body>
+    <!-- Dark Mode Toggle -->
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+        <span id="themeIcon">🌙</span> <span id="themeLabel">Dark Mode</span>
+    </button>
+
+    <div class="page-wrapper">
+        <!-- Hero Section -->
+        <header class="hero">
+            <div class="hero-badge">
+                <span>🛡️</span> AI-Powered · Secure · Local
+            </div>
+            <h1>Document AI Hub</h1>
+            <p class="subtitle">An intelligent suite of tools for document verification, OCR extraction, forgery detection, and face match KYC — all running locally.</p>
+        </header>
+
+        <main class="card-grid" role="main">
+            <!-- Card 1: AI OCR -->
+            <a href="/gemini-ocr.html" class="card-link" id="card-ocr">
+                <div class="card">
+                    <div class="card-icon-wrap">📄</div>
+                    <h2>AI Document OCR</h2>
+                    <p>Upload official documents — Aadhaar, PAN, marksheets, certificates — and automatically extract key fields using AI.</p>
+                    <div class="card-arrow">→</div>
+                </div>
+            </a>
+
+            <!-- Card 2: Aadhaar Verifier -->
+            <a href="/aadhaar-verifier.html" class="card-link" id="card-aadhaar">
+                <div class="card">
+                    <div class="card-icon-wrap">🪪</div>
+                    <h2>Aadhaar Card Verifier</h2>
+                    <p>Bulk-upload images to automatically detect and sort valid Aadhaar cards. Download verified cards as a ZIP archive.</p>
+                    <div class="card-arrow">→</div>
+                </div>
+            </a>
+
+            <!-- Card 3: PAN Verifier -->
+            <a href="/pan-verifier.html" class="card-link" id="card-pan">
+                <div class="card">
+                    <div class="card-icon-wrap">💳</div>
+                    <h2>PAN Card Verifier</h2>
+                    <p>Quickly detect and isolate legitimate PAN cards from large batches. Exports verified cards in a clean ZIP file.</p>
+                    <div class="card-arrow">→</div>
+                </div>
+            </a>
+
+            <!-- Card 4: Offline Validator -->
+            <a href="/offline-validator.html" class="card-link" id="card-offline">
+                <div class="card">
+                    <div class="card-icon-wrap">✍️</div>
+                    <h2>Handwritten Validator</h2>
+                    <p>Upload a handwritten registration form and compare it field-by-field against master data from uploaded documents.</p>
+                    <div class="card-arrow">→</div>
+                </div>
+            </a>
+
+            <!-- Card 5: Forgery Detector -->
+            <a href="/forgery-detector.html" class="card-link" id="card-forgery">
+                <div class="card card-new">
+                    <div class="card-icon-wrap">🔍</div>
+                    <h2>Forgery Detector</h2>
+                    <p>Detect digitally tampered documents using Error Level Analysis (ELA) heatmaps and deep EXIF metadata forensics.</p>
+                    <div class="card-arrow">→</div>
+                </div>
+            </a>
+
+            <!-- Card 6: Face Match KYC -->
+            <a href="/face-match.html" class="card-link" id="card-facematch">
+                <div class="card card-new">
+                    <div class="card-icon-wrap">🤳</div>
+                    <h2>Face Match KYC</h2>
+                    <p>Compare the photo on an ID card against a selfie or live webcam capture. 100% local — no biometric data leaves your browser.</p>
+                    <div class="card-arrow">→</div>
+                </div>
+            </a>
+        </main>
+
+        <footer class="site-footer">
+            <p>© Developed at <strong>WCE</strong> · Document AI Hub</p>
+        </footer>
+    </div>
+
+    <script>
+        // ── Dark Mode Toggle ─────────────────────────────────
+        const html      = document.documentElement;
+        const btn       = document.getElementById('themeToggle');
+        const icon      = document.getElementById('themeIcon');
+        const label     = document.getElementById('themeLabel');
+        const saved     = localStorage.getItem('theme') || 'light';
+
+        function applyTheme(theme) {
+            html.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            if (theme === 'dark') { icon.textContent = '☀️'; label.textContent = 'Light Mode'; }
+            else                  { icon.textContent = '🌙'; label.textContent = 'Dark Mode'; }
+        }
+        applyTheme(saved);
+        btn.addEventListener('click', () => applyTheme(html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
+    </script>
+</body>
+</html>

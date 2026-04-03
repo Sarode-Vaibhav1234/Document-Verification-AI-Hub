@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Bulk verify multiple Aadhaar card images using AI document detection. Download verified cards as a ZIP.">
+  <title>Aadhaar Bulk Verifier — Document AI Hub</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <link rel="stylesheet" href="aadhaar-verifier.css">
+</head>
+<body>
+  <div class="topbar">
+    <a href="/" class="back-btn">← Home</a>
+  </div>
+
+  <div class="wrap">
+    <!-- Upload Card -->
+    <div class="card">
+      <h1>🪪 Aadhaar Bulk Verifier</h1>
+      <p class="subtitle">Upload multiple images. The AI will detect which are valid Aadhaar cards based on their structural elements.</p>
+
+      <div class="drop-zone" id="dropZone">
+        <span class="drop-icon">📂</span>
+        <input type="file" id="fileInput" accept="image/*" multiple>
+        <label for="fileInput" class="drop-label">Click to browse or drag & drop images</label>
+        <p class="drop-hint">JPEG, PNG, or WebP · Multiple files allowed</p>
+        <div id="file-count">No files selected</div>
+      </div>
+
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+        <div class="progress-label" id="progressLabel">0 / 0 processed</div>
+      </div>
+
+      <button id="verifyBtn">⚡ Verify All Selected Files</button>
+    </div>
+
+    <!-- Results Card -->
+    <div class="card">
+      <h2>📊 Results</h2>
+      <ul id="results-list">
+        <li class="no-results" id="no-results">Results will appear here after verification.</li>
+      </ul>
+      <button id="downloadBtn">⬇️ Download Verified Aadhaar Cards (.zip)</button>
+    </div>
+  </div>
+
+  <script src="aadhaar-verifier.js"></script>
+</body>
+</html>

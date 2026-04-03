@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Compare handwritten form data against master documents using AI field matching.">
+    <title>Handwritten Form Validator — Document AI Hub</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="topbar">
+        <a href="/" class="back-btn">← Home</a>
+        <a href="/gemini-ocr.html" class="back-btn">← Upload Documents</a>
+        <span class="step-badge">Step 3 of 3</span>
+    </div>
+
+    <div class="container" style="max-width: 1100px;">
+        <h1>✍️ Handwritten Form Validator</h1>
+        <p>Upload a handwritten registration form to compare it field-by-field against the master data extracted from your original documents.</p>
+
+        <div class="page-layout">
+            <!-- Left: Master Data -->
+            <div class="data-column">
+                <h3>📋 Master Data (Original Docs)</h3>
+                <div id="masterDataContainer">
+                    <p style="color: var(--text-muted); font-size: 0.875rem;">Loading master data from session…</p>
+                </div>
+            </div>
+
+            <!-- Right: Upload & Results -->
+            <div class="data-column">
+                <h3>📝 Handwritten Form Upload</h3>
+
+                <div class="file-upload-area" id="dropZone">
+                    <span class="upload-icon">📋</span>
+                    <input type="file" id="handwrittenUploader" accept="image/jpeg, image/png, image/webp">
+                    <label for="handwrittenUploader" class="upload-label">Click to browse or drag & drop</label>
+                    <p class="upload-hint">JPEG, PNG, or WebP · Max 5 MB</p>
+                </div>
+                <p id="fileName"></p>
+
+                <!-- Image preview -->
+                <div id="imagePreview" class="hidden" style="margin-top: 14px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color);">
+                    <img id="previewImg" src="" alt="Form preview" style="max-width: 100%; max-height: 200px; object-fit: contain; display: block; margin: 0 auto;">
+                </div>
+
+                <button id="validateButton" class="btn" style="width: 100%; margin-top: 16px;">
+                    🔍 Compare &amp; Validate
+                </button>
+
+                <div id="loader" class="hidden" style="margin-top: 20px;">
+                    <div class="spinner"></div>
+                    <p>Reading handwriting and comparing… this may take a moment.</p>
+                </div>
+
+                <div id="resultsContainer" class="hidden" style="margin-top: 20px;">
+                    <!-- Result banner injected by JS -->
+                    <div id="finalResultBanner"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Full-width comparison table -->
+        <div id="tableContainer" class="hidden" style="margin-top: 32px;">
+            <h3 style="font-size: 0.875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 16px;">Field-by-Field Comparison</h3>
+            <div style="overflow-x: auto;">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Original (Master)</th>
+                            <th>Handwritten</th>
+                            <th>Match %</th>
+                        </tr>
+                    </thead>
+                    <tbody id="comparisonTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ── Toast ────────────────────────────────────────────
+        function showToast(message, type = 'error', duration = 4000) {
+            const t = document.createElement('div');
+            t.className = `toast toast-${type}`;
+            t.innerHTML = `<span>${message}</span>`;
+            document.body.appendChild(t);
+            requestAnimationFrame(() => t.classList.add('toast-visible'));
+            setTimeout(() => { t.classList.remove('toast-visible'); t.addEventListener('transitionend', () => t.remove(), { once: true }); }, duration);
+        }
+
+        const masterDataContainer = document.getElementById('masterDataContainer');
+        const uploader            = document.getElementById('handwrittenUploader');
+        const fileNameDisplay     = document.getElementById('fileName');
+        const validateButton      = document.getElementById('validateButton');
+        const loader              = document.getElementById('loader');
+        const resultsContainer    = document.getElementById('resultsContainer');
+        const finalResultBanner   = document.getElementById('finalResultBanner');
+        const comparisonTableBody = document.getElementById('comparisonTableBody');
+        const tableContainer      = document.getElementById('tableContainer');
+        const dropZone            = document.getElementById('dropZone');
+        const previewImg          = document.getElementById('previewImg');
+        const previewContainer    = document.getElementById('imagePreview');
+
+        // ── Load master data on page load ────────────────────
+        (async () => {
+            try {
+                const response = await fetch('/get-session-data');
+                const result   = await response.json();
+                if (result.success && result.data) {
+                    masterDataContainer.innerHTML = '';
+                    const consolidated = Object.values(result.data).reduce((a, c) => ({ ...a, ...c }), {});
+                    for (const [key, val] of Object.entries(consolidated)) {
+                        const item      = document.createElement('div');
+                        item.className  = 'master-data-item';
+                        const keySpan   = document.createElement('strong');
+                        const valSpan   = document.createElement('span');
+                        keySpan.textContent = key.replace(/([A-Z])/g, ' $1').trim() + ':';
+                        valSpan.textContent = ' ' + (val || '—');
+                        item.appendChild(keySpan);
+                        item.appendChild(valSpan);
+                        masterDataContainer.appendChild(item);
+                    }
+                    if (Object.keys(consolidated).length === 0) {
+                        masterDataContainer.innerHTML = '<p style="color:var(--text-muted);font-size:0.875rem;">No data found. Please <a href="/gemini-ocr.html">upload documents first</a>.</p>';
+                    }
+                } else {
+                    masterDataContainer.innerHTML = `<p style="color:var(--fail);font-size:0.875rem;">Could not load master data. Please <a href="/gemini-ocr.html">upload original documents</a> first.</p>`;
+                }
+            } catch (err) {
+                masterDataContainer.innerHTML = `<p style="color:var(--fail);font-size:0.875rem;">Error loading master data.</p>`;
+            }
+        })();
+
+        // ── File selection & preview ─────────────────────────
+        function handleFile(file) {
+            if (!file) return;
+            fileNameDisplay.textContent = file.name;
+            const reader = new FileReader();
+            reader.onload = e => { previewImg.src = e.target.result; previewContainer.classList.remove('hidden'); };
+            reader.readAsDataURL(file);
+        }
+        uploader.addEventListener('change', () => handleFile(uploader.files[0]));
+
+        // ── Drag-and-drop ────────────────────────────────────
+        dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault(); dropZone.classList.remove('drag-over');
+            const file = e.dataTransfer.files[0];
+            if (file) { const dt = new DataTransfer(); dt.items.add(file); uploader.files = dt.files; handleFile(file); }
+        });
+
+        // ── Validate button ──────────────────────────────────
+        validateButton.addEventListener('click', async () => {
+            const file = uploader.files[0];
+            if (!file) { showToast('Please select a handwritten form image!', 'warning'); return; }
+
+            loader.classList.remove('hidden');
+            resultsContainer.classList.add('hidden');
+            tableContainer.classList.add('hidden');
+            validateButton.disabled = true;
+
+            const formData = new FormData();
+            formData.append('handwrittenForm', file);
+
+            try {
+                const response = await fetch('/validate-handwritten-form', { method: 'POST', body: formData });
+                const result   = await response.json();
+                if (!response.ok) throw new Error(result.error);
+                displayComparison(result);
+            } catch (err) {
+                showToast(`Validation failed: ${err.message}`, 'error');
+            } finally {
+                loader.classList.add('hidden');
+                validateButton.disabled = false;
+            }
+        });
+
+        // ── Display results ──────────────────────────────────
+        function displayComparison(result) {
+            const score = result.overallSimilarity * 100;
+            const isPass = score >= 90;
+
+            // Banner
+            const banner = document.createElement('div');
+            banner.className = `result-banner ${isPass ? 'pass' : 'fail'}`;
+            banner.innerHTML = `
+                <span>${isPass ? '✅' : '⚠️'}</span>
+                <span>${isPass ? 'Validation Passed' : 'Discrepancies Found'} — Overall Match: <strong>${score.toFixed(1)}%</strong></span>
+            `;
+            finalResultBanner.innerHTML = '';
+            finalResultBanner.appendChild(banner);
+            resultsContainer.classList.remove('hidden');
+            showToast(`${isPass ? 'Validation passed' : 'Discrepancies found'} — ${score.toFixed(1)}% match`, isPass ? 'success' : 'warning');
+
+            // Table
+            comparisonTableBody.innerHTML = '';
+            result.comparison.forEach(item => {
+                const row       = document.createElement('tr');
+                const similarity = item.similarity * 100;
+                const cls        = similarity >= 90 ? 'match' : 'mismatch';
+
+                // Use textContent for safety
+                const cells = [item.field, item.masterValue, item.handwrittenValue, `${similarity.toFixed(1)}%`];
+                cells.forEach((val, i) => {
+                    const td = document.createElement('td');
+                    td.textContent = val;
+                    if (i === 3) td.className = cls;
+                    row.appendChild(td);
+                });
+                comparisonTableBody.appendChild(row);
+            });
+            tableContainer.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

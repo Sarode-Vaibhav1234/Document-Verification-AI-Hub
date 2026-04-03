@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="KYC Face Match Verifier — Compare the photo on an ID card against a selfie using local AI face recognition.">
+  <title>Face Match Verifier — Document AI Hub</title>
+  <!-- face-api.js from CDN (runs 100% in browser, no server needed) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <link rel="stylesheet" href="face-match.css">
+</head>
+<body>
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <a href="/" class="back-btn">← Home</a>
+    <span class="module-badge">🤳 Face Match KYC</span>
+  </div>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>Face Match <span>Verifier</span></h1>
+    <p>Compare the photo on an <strong>ID document</strong> (Aadhaar, PAN) against a <strong>selfie or live webcam photo</strong>. All face processing runs locally in your browser — no data is sent to any server.</p>
+  </div>
+
+  <!-- Model Loading Banner -->
+  <div id="modelBanner">
+    <div class="model-spinner"></div>
+    <div class="model-status-wrap">
+      <div class="model-status-text" id="modelStatus">Loading AI face recognition models…</div>
+      <div class="model-progress-bar"><div class="model-progress-fill" id="modelProgressFill" style="width:0%"></div></div>
+    </div>
+    <span class="model-pct" id="modelPct">0%</span>
+  </div>
+
+  <!-- Upload Grid -->
+  <div class="upload-grid">
+
+    <!-- Panel 1: ID Document -->
+    <div class="upload-panel">
+      <div class="panel-header id-header">🪪 ID Document (Aadhaar / PAN)</div>
+      <div class="drop-zone-fm" id="idDropZone">
+        <span class="drop-zone-icon">🪪</span>
+        <input type="file" id="idFileInput" accept="image/*">
+        <label for="idFileInput" class="drop-zone-label">Upload ID Document</label>
+        <p class="drop-zone-hint">JPEG or PNG · Max 5 MB</p>
+      </div>
+      <div class="panel-preview-wrap" id="idPreviewWrap">
+        <canvas id="idCanvas"></canvas>
+        <div class="face-badge" id="idFaceBadge"></div>
+      </div>
+    </div>
+
+    <!-- Panel 2: Selfie -->
+    <div class="upload-panel">
+      <div class="panel-header cam-header">🤳 Selfie / Live Photo</div>
+      <div class="drop-zone-fm" id="selfieDropZone">
+        <span class="drop-zone-icon">📸</span>
+        <input type="file" id="selfieFileInput" accept="image/*">
+        <label for="selfieFileInput" class="drop-zone-label">Upload Selfie Photo</label>
+        <p class="drop-zone-hint">JPEG or PNG · or use webcam below</p>
+      </div>
+      <div class="panel-preview-wrap" id="selfiePreviewWrap">
+        <canvas id="selfieCanvas"></canvas>
+        <div class="face-badge" id="selfieFaceBadge"></div>
+      </div>
+      <!-- Live webcam section -->
+      <div class="webcam-controls">
+        <video id="webcamVideo" class="webcam-video" autoplay playsinline muted></video>
+        <button class="btn-webcam" id="webcamBtn">📷 Open Webcam Instead</button>
+        <button id="captureBtn">📸 Capture Photo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compare Button -->
+  <div class="compare-wrap">
+    <button id="compareBtn" disabled>🔍 Compare Faces</button>
+  </div>
+
+  <!-- Processing overlay -->
+  <div id="processingOverlay">
+    <div class="proc-spinner"></div>
+    <p class="proc-title">Detecting faces &amp; computing similarity…</p>
+    <p class="proc-subtitle">This runs entirely in your browser using TensorFlow.js</p>
+  </div>
+
+  <!-- Results Section -->
+  <div id="resultsSection">
+
+    <!-- Verdict -->
+    <div id="matchVerdict">
+      <div class="verdict-big-icon" id="verdictIcon"></div>
+      <div class="verdict-info">
+        <h2 id="verdictTitle"></h2>
+        <p  id="verdictDesc"></p>
+      </div>
+    </div>
+
+    <!-- Face row with similarity meter -->
+    <div class="face-result-row">
+      <div class="face-crop-wrap">
+        <canvas id="idFaceCrop" class="face-crop-canvas" width="110" height="110"></canvas>
+        <div class="face-label">ID Document</div>
+      </div>
+
+      <div class="similarity-center">
+        <div class="sim-score" id="simScore">—</div>
+        <div class="sim-label">Facial Similarity</div>
+        <div class="sim-bar-track">
+          <div class="sim-bar-fill" id="simBarFill" style="width:0%;"></div>
+        </div>
+        <div class="sim-bar-labels">
+          <span>0%</span><span>50%</span><span>100%</span>
+        </div>
+      </div>
+
+      <div class="face-crop-wrap">
+        <canvas id="selfieFaceCrop" class="face-crop-canvas" width="110" height="110"></canvas>
+        <div class="face-label">Selfie</div>
+      </div>
+    </div>
+
+    <!-- Guidance -->
+    <div class="guidance-box">
+      <strong>📖 How similarity is calculated:</strong> Face descriptors (128-point embeddings) are extracted from both images using Microsoft's ResNet-based face recognition model. The Euclidean distance between the two descriptors is converted to a <strong>similarity percentage</strong>.
+      A score above <strong class="text-success">75%</strong> indicates a strong match. Between <strong class="text-muted">55–75%</strong> is inconclusive (lighting or angle may differ). Below <strong class="text-fail">55%</strong> suggests different individuals.
+      <br><br><strong>🔒 Privacy:</strong> All face processing happens exclusively in your browser using TensorFlow.js. No face image or biometric data is ever uploaded to any server.
+    </div>
+
+  </div>
+
+  <script src="face-match.js"></script>
+</body>
+</html>

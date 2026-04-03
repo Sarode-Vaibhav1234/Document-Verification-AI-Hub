@@ -1,0 +1,27 @@
+{
+  "name": "document-ai-hub-backend",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["document-verification", "ai", "ocr", "kyc"],
+  "author": "",
+  "license": "ISC",
+  "description": "Backend server for Document AI Hub — AI-powered document verification system",
+  "dependencies": {
+    "axios": "^1.12.2",
+    "better-sqlite3": "^12.8.0",
+    "dotenv": "^17.2.2",
+    "exifr": "^7.1.3",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.3.2",
+    "express-session": "^1.18.2",
+    "helmet": "^8.1.0",
+    "js-levenshtein": "^1.1.6",
+    "multer": "^2.0.2",
+    "p-limit": "^7.3.0"
+  }
+}

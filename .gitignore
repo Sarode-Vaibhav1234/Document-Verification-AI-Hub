@@ -1,0 +1,56 @@
+# ─── Environment Variables ────────────────────────────────────
+# NEVER commit API keys or secrets
+.env
+.env.local
+.env.production
+backend/.env
+
+# ─── Node.js ──────────────────────────────────────────────────
+node_modules/
+backend/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ─── SQLite Databases ─────────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+backend/verifications.db
+
+# ─── File Uploads (temp) ─────────────────────────────────────
+uploads/
+tmp/
+backend/uploads/
+
+# ─── Python (ML Service) ─────────────────────────────────────
+backend/ml_service/venv/
+backend/ml_service/__pycache__/
+backend/ml_service/**/__pycache__/
+backend/ml_service/*.pyc
+backend/ml_service/**/*.pyc
+
+# ─── ML Model Weights (large binary files) ───────────────────
+backend/ml_service/models/*.pt
+backend/ml_service/models/*.pth
+backend/ml_service/models/*.onnx
+backend/ml_service/models/*.bin
+
+# ─── OS & Editor Files ───────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/settings.json
+.idea/
+
+# ─── Logs ────────────────────────────────────────────────────
+*.log
+logs/
+
+# ─── Build Artifacts ─────────────────────────────────────────
+dist/
+build/
+
+# ─── Analysis / private docs ─────────────────────────────────
+document_verification_analysis.md
