@@ -167,7 +167,7 @@ app.post('/analyze-document', upload.single('document'), async (req, res) => {
         const prompt      = getPromptForDocType(docType);
         const reqData     = { contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: req.file.mimetype, data: imageBase64 } }] }] };
 
-        const apiResp   = await axios.post(GEMINI_URL, reqData, { timeout: 30000 });
+        const apiResp   = await axios.post(GEMINI_URL, reqData, { timeout: 60000 });
         const rawText   = apiResp.data.candidates[0].content.parts[0].text;
         const { data, error } = safeParseJSON(rawText, '/analyze-document');
         if (error) return res.status(500).json({ error });
@@ -239,7 +239,7 @@ app.post('/validate-handwritten-form', upload.single('handwrittenForm'), async (
         const ocrPrompt = 'This is a filled form (English or Marathi). Extract all handwritten entries with their printed labels. ' +
                           'Return ONLY a flat JSON object: { "label": "handwritten_value", ... }';
         const ocrReqData   = { contents: [{ parts: [{ text: ocrPrompt }, { inline_data: { mime_type: req.file.mimetype, data: imageBase64 } }] }] };
-        const ocrApiResp   = await axios.post(GEMINI_URL, ocrReqData, { timeout: 30000 });
+        const ocrApiResp   = await axios.post(GEMINI_URL, ocrReqData, { timeout: 60000 });
         const ocrRawText   = ocrApiResp.data.candidates[0].content.parts[0].text;
         const { data: handwrittenData, error: ocrErr } = safeParseJSON(ocrRawText, 'HTR-OCR');
         if (ocrErr) return res.status(500).json({ error: ocrErr });
@@ -257,7 +257,7 @@ Return ONLY a JSON array: [{"field":"key","masterValue":"val","handwrittenValue"
 If no match found: set handwrittenValue to "Not Found" and similarity to 0.0.`;
 
         const arbReqData  = { contents: [{ parts: [{ text: arbPrompt }] }] };
-        const arbApiResp  = await axios.post(GEMINI_URL, arbReqData, { timeout: 30000 });
+        const arbApiResp  = await axios.post(GEMINI_URL, arbReqData, { timeout: 60000 });
         const arbRawText  = arbApiResp.data.candidates[0].content.parts[0].text;
         const { data: comparisonResults, error: arbErr } = safeParseJSON(arbRawText, 'arbitrator');
         if (arbErr) return res.status(500).json({ error: arbErr });
@@ -289,13 +289,15 @@ If no match found: set handwrittenValue to "Not Found" and similarity to 0.0.`;
     }
 });
 
-// ─── Endpoint 5: Document Classifier Proxy (replaces frontend Roboflow call) ───
+// ─── Endpoint 5: Document Classifier Proxy (Roboflow + Gemini Fallback) ───
 app.post('/classify-document', upload.single('image'), async (req, res) => {
     const docType = req.query.type; // 'aadhaar' or 'pan'
     if (!validateUpload(req.file, res)) return;
     if (!docType) return res.status(400).json({ error: 'Missing ?type= parameter.' });
 
-    // Try local ML classifier first
+    const base64Body = req.file.buffer.toString('base64');
+
+    // 1. Try local ML classifier first
     if (ML_SERVICE_URL) {
         try {
             const fd = new FormData();
@@ -304,34 +306,67 @@ app.post('/classify-document', upload.single('image'), async (req, res) => {
             const mlResp = await axios.post(`${ML_SERVICE_URL}/classify`, fd, { timeout: 30000 });
             return res.json(mlResp.data);
         } catch (mlErr) {
-            console.warn('ML classifier unavailable, falling back to Roboflow:', mlErr.message);
+            console.warn('ML classifier unavailable, falling back to APIs:', mlErr.message);
         }
     }
 
-    if (!ROBOFLOW_API_KEY) {
-        return res.status(503).json({ error: 'Classification service not configured. Add ROBOFLOW_API_KEY to .env' });
+    let rfData = null;
+    let fallbackToGemini = true;
+
+    // 2. Try Roboflow Fast Classification
+    if (ROBOFLOW_API_KEY) {
+        try {
+            const modelMap = {
+                aadhaar: 'https://serverless.roboflow.com/document-verification-rbdur/3',
+                pan:     'https://serverless.roboflow.com/pancard-mp1jt/1',
+            };
+            const endpoint = modelMap[docType];
+            if (endpoint) {
+                const url = new URL(endpoint);
+                url.searchParams.set('api_key', ROBOFLOW_API_KEY);
+                const rfResp = await axios.post(url.toString(), base64Body, {
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    timeout: 5000
+                });
+                rfData = rfResp.data;
+
+                // Check if Roboflow found the required elements (heuristic)
+                const required = docType === 'aadhaar' ? ['photo', 'logo', 'aadhar no', 'qr'] : ['photo', 'pan', 'symbol'];
+                const found = rfData.predictions?.map(p => p.class) || [];
+                const hasAll = required.every(cls => found.includes(cls));
+
+                if (hasAll) {
+                    fallbackToGemini = false; // Roboflow succeeded perfectly!
+                    return res.json(rfData);
+                }
+            }
+        } catch (err) {
+            console.warn('Roboflow failed or timed out, triggering Gemini fallback:', err.message);
+        }
     }
 
-    const modelMap = {
-        aadhaar: 'https://serverless.roboflow.com/document-verification-rbdur/3',
-        pan:     'https://serverless.roboflow.com/pancard-mp1jt/1',
-    };
-    const endpoint = modelMap[docType];
-    if (!endpoint) return res.status(400).json({ error: `Unknown doc type: ${docType}` });
+    // 3. Fallback to Gemini (Smart, multi-modal classification)
+    if (fallbackToGemini) {
+        try {
+            const prompt = docType === 'aadhaar' 
+                ? `Analyze this document. Is it a valid Indian Aadhaar card or Aadhaar letter? We need to verify these 4 classes: 'photo', 'logo', 'aadhar no', 'qr'. If it is a valid Aadhaar document, return a JSON object containing a predictions array simulating object detection, like this: {"predictions": [{"class": "photo", "confidence": 0.95}, {"class": "logo", "confidence": 0.92}, {"class": "aadhar no", "confidence": 0.96}, {"class": "qr", "confidence": 0.90}]}. If it is definitely NOT an Aadhaar, return {"predictions": []}. Return ONLY the JSON, no markdown.` 
+                : `Analyze this document. Is it a valid Indian PAN card? We need to verify these 3 classes: 'photo', 'pan', 'symbol' (for the Income Tax Dept logo). If it is a valid PAN card, return a JSON object containing a predictions array: {"predictions": [{"class": "photo", "confidence": 0.95}, {"class": "pan", "confidence": 0.92}, {"class": "symbol", "confidence": 0.90}]}. If it is definitely NOT a PAN card, return {"predictions": []}. Return ONLY the JSON, no markdown.`;
 
-    try {
-        const base64Body = req.file.buffer.toString('base64');
-        const url        = new URL(endpoint);
-        url.searchParams.set('api_key', ROBOFLOW_API_KEY);
-
-        const rfResp = await axios.post(url.toString(), base64Body, {
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            timeout: 20000
-        });
-        res.json(rfResp.data);
-    } catch (err) {
-        console.error('Roboflow proxy error:', err.response?.data || err.message);
-        clientError(err, res);
+            const reqData = { contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: req.file.mimetype, data: base64Body } }] }] };
+            const apiResp = await axios.post(GEMINI_URL, reqData, { timeout: 60000 });
+            
+            const rawText = apiResp.data.candidates[0].content.parts[0].text;
+            const { data, error } = safeParseJSON(rawText, 'classify-document-gemini');
+            
+            if (error) return res.status(500).json({ error: 'Gemini fallback failed.' });
+            return res.json(data);
+            
+        } catch (err) {
+            console.error('Gemini fallback error:', err.response?.data || err.message);
+            // If Gemini fails too, return the original Roboflow data if we have it, else error
+            if (rfData) return res.json(rfData);
+            return clientError(err, res);
+        }
     }
 });
 
