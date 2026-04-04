@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // ── Fetch session data & populate form ──────────────────
     try {
-        const response = await fetch('/get-session-data');
+        const response = await fetch(`${window.API_BASE_URL}/get-session-data`, { credentials: 'include' });
         const result   = await response.json();
 
         if (result.success && result.data) {
@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         submitBtn.textContent = 'Submitting…';
 
         try {
-            const response = await fetch('/submit-form', { method: 'POST' });
+            const response = await fetch(`${window.API_BASE_URL}/submit-form`, { method: 'POST', credentials: 'include' });
             const result   = await response.json();
 
             if (result.success) {

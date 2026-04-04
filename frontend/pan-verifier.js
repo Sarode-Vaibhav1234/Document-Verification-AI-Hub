@@ -57,7 +57,7 @@ verifyBtn.addEventListener('click', async () => {
         try {
             const fd = new FormData();
             fd.append('image', file);
-            const resp = await fetch('/classify-document?type=pan', { method: 'POST', body: fd });
+            const resp = await fetch(`${window.API_BASE_URL}/classify-document?type=pan`, { method: 'POST', body: fd, credentials: 'include' });
             const json = await resp.json();
             renderResult(item, json, file);
         } catch (err) {

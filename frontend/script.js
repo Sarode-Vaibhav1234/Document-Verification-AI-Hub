@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
         formData.append('docType', docType);
 
         try {
-            const response = await fetch('/analyze-document', { method: 'POST', body: formData });
+            const response = await fetch(`${window.API_BASE_URL}/analyze-document`, { method: 'POST', body: formData, credentials: 'include' });
             const result   = await response.json();
             if (!response.ok) throw new Error(result.error);
 

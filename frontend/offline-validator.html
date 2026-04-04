@@ -106,7 +106,7 @@
         // ── Load master data on page load ────────────────────
         (async () => {
             try {
-                const response = await fetch('/get-session-data');
+                const response = await fetch(`${window.API_BASE_URL}/get-session-data`, { credentials: 'include' });
                 const result   = await response.json();
                 if (result.success && result.data) {
                     masterDataContainer.innerHTML = '';
@@ -166,7 +166,7 @@
             formData.append('handwrittenForm', file);
 
             try {
-                const response = await fetch('/validate-handwritten-form', { method: 'POST', body: formData });
+                const response = await fetch(`${window.API_BASE_URL}/validate-handwritten-form`, { method: 'POST', body: formData, credentials: 'include' });
                 const result   = await response.json();
                 if (!response.ok) throw new Error(result.error);
                 displayComparison(result);
@@ -215,5 +215,6 @@
             tableContainer.classList.remove('hidden');
         }
     </script>
+<script src="config.js"></script>
 </body>
 </html>

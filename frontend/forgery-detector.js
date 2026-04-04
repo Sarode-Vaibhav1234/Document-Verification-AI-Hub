@@ -173,7 +173,7 @@ analyzeBtn.addEventListener('click', async () => {
     // Step 2: Metadata
     stepActive('step2');
     const fd = new FormData(); fd.append('document', currentFile);
-    const metaResp = await fetch('/analyze-metadata', { method: 'POST', body: fd });
+    const metaResp = await fetch(`${window.API_BASE_URL}/analyze-metadata`, { method: 'POST', body: fd, credentials: 'include' });
     const metaData = await metaResp.json();
     stepDone('step2', '🗂️');
 

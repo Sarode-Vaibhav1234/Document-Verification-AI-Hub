@@ -61,7 +61,7 @@ verifyBtn.addEventListener('click', async () => {
         try {
             const formData = new FormData();
             formData.append('image', file);
-            const resp = await fetch('/classify-document?type=aadhaar', { method: 'POST', body: formData });
+            const resp = await fetch(`${window.API_BASE_URL}/classify-document?type=aadhaar`, { method: 'POST', body: formData, credentials: 'include' });
             const json = await resp.json();
             updateResultItem(resultItem, json, file);
         } catch (err) {

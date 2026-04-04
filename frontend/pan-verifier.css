@@ -121,3 +121,13 @@ h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; }
 .toast-error    { background: linear-gradient(135deg, #dc2626, #ef4444); }
 .toast-warning  { background: linear-gradient(135deg, #d97706, #f59e0b); }
 .toast-info     { background: linear-gradient(135deg, #2563eb, #3b82f6); }
+
+/* ── Responsive ────────────────────────── */
+@media (max-width: 640px) {
+  body { padding: 20px 12px; }
+  .card { padding: 20px 16px; }
+  h1 { font-size: 1.4rem; }
+  .drop-zone { padding: 28px 16px; }
+  .toast { right: 16px; bottom: 16px; min-width: auto; }
+  .result-details { padding-left: 0; padding-top: 6px; }
+}
