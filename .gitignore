@@ -53,3 +53,4 @@ build/
 
 # ─── Analysis / private docs ─────────────────────────────────
 document_verification_analysis.md
+architecture_overview.md

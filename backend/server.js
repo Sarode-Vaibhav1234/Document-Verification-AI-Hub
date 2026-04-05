@@ -9,9 +9,10 @@ const axios         = require('axios');
 const session       = require('express-session');
 const helmet        = require('helmet');
 const rateLimit     = require('express-rate-limit');
+const cors          = require('cors');
 const Database      = require('better-sqlite3');
 const path          = require('path');
-require('dotenv').config();
+require('dotenv').config({ override: true });
 
 // ─── Configuration ────────────────────────────────────────────
 const app  = express();
@@ -53,8 +54,33 @@ db.exec(`
 console.log('✅ SQLite database ready (verifications.db)');
 
 // ─── Middleware ────────────────────────────────────────────────
-// Security headers (CSP disabled for inline scripts in existing HTML)
-app.use(helmet({ contentSecurityPolicy: false }));
+// Security headers (helmet modified to allow cross-origin logic)
+app.use(helmet({ 
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+
+// Trust reverse proxy (crucial for Render and Vercel connecting securely)
+app.set('trust proxy', 1);
+
+// Enable CORS for Vercel Frontend
+const allowedOrigins = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    process.env.FRONTEND_URL
+].filter(Boolean);
+
+app.use(cors({
+    origin: function (origin, callback) {
+        // Allows local dev or any Vercel branch/production URL dynamically
+        if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS (' + origin + ')'));
+        }
+    },
+    credentials: true // Crucial to allow cross-origin cookies!
+}));
 
 // Rate limiting — 120 requests per 15 minutes per IP
 const limiter = rateLimit({
@@ -74,15 +100,15 @@ const upload = multer({
     limits: { fileSize: 6 * 1024 * 1024 } // 6 MB hard limit in multer
 });
 
-// Session
+// Setup Session (for maintaining state across module calls)
 app.use(session({
-    secret: SESSION_SECRET,
+    secret: process.env.SESSION_SECRET || 'fallback-dev-secret-key-1234',
     resave: false,
-    saveUninitialized: true,
-    cookie: {
-        secure:   isProd,  // HTTPS only in production
-        httpOnly: true,
-        maxAge:   60 * 60 * 1000 // 1 hour
+    saveUninitialized: false,
+    cookie: { 
+        secure: isProd,           // HTTPS only in prod
+        sameSite: isProd ? 'none' : 'lax', // 'none' required for cross-domain cookies
+        maxAge: 1000 * 60 * 60 * 24 
     }
 }));
 
