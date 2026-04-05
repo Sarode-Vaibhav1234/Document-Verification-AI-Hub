@@ -105,13 +105,12 @@
         const previewContainer    = document.getElementById('imagePreview');
 
         // ── Load master data on page load ────────────────────
-        (async () => {
-            try {
-                const response = await fetch(`${window.API_BASE_URL}/get-session-data`, { credentials: 'include' });
-                const result   = await response.json();
-                if (result.success && result.data) {
-                    masterDataContainer.innerHTML = '';
-                    const consolidated = Object.values(result.data).reduce((a, c) => ({ ...a, ...c }), {});
+        try {
+            const rawData = localStorage.getItem('documentData');
+            if (rawData) {
+                const sessionData = JSON.parse(rawData);
+                masterDataContainer.innerHTML = '';
+                const consolidated = Object.values(sessionData).reduce((a, c) => ({ ...a, ...c }), {});
                     for (const [key, val] of Object.entries(consolidated)) {
                         const item      = document.createElement('div');
                         item.className  = 'master-data-item';
@@ -132,7 +131,6 @@
             } catch (err) {
                 masterDataContainer.innerHTML = `<p style="color:var(--fail);font-size:0.875rem;">Error loading master data.</p>`;
             }
-        })();
 
         // ── File selection & preview ─────────────────────────
         function handleFile(file) {
@@ -165,6 +163,8 @@
 
             const formData = new FormData();
             formData.append('handwrittenForm', file);
+            // Inject master state from frontend directly instead of relying on server session
+            formData.append('masterData', localStorage.getItem('documentData') || '{}');
 
             try {
                 const response = await fetch(`${window.API_BASE_URL}/validate-handwritten-form`, { method: 'POST', body: formData, credentials: 'include' });

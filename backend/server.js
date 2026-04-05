@@ -219,15 +219,7 @@ function saveVerification(sessionId, docType, data) {
     }
 }
 
-// ─── Endpoint 2: Get Session Data ─────────────────────────────
-app.get('/get-session-data', (req, res) => {
-    if (req.session.documentData) {
-        res.json({ success: true, data: req.session.documentData });
-    } else {
-        res.json({ success: false, message: 'No document data found in session.' });
-    }
-});
-
+// ─── Endpoint 2: Removed /get-session-data (Shifted to localStorage) ────────
 // ─── Endpoint 3: Submit Form ───────────────────────────────────
 app.post('/submit-form', (req, res) => {
     req.session.destroy(err => {
@@ -239,15 +231,18 @@ app.post('/submit-form', (req, res) => {
 
 // ─── Endpoint 4: Validate Handwritten Form ─────────────────────
 app.post('/validate-handwritten-form', upload.single('handwrittenForm'), async (req, res) => {
-    if (!req.session.documentData) {
-        return res.status(400).json({ error: 'No master document data in session. Please upload original documents first.' });
+    let sessionDocs = {};
+    try { sessionDocs = JSON.parse(req.body.masterData || '{}'); } catch (e) {}
+
+    if (Object.keys(sessionDocs).length === 0) {
+        return res.status(400).json({ error: 'No master document data provided. Please upload original documents first.' });
     }
     if (!validateUpload(req.file, res)) return;
 
     // Try local ML HTR + comparator first
     if (ML_SERVICE_URL) {
         try {
-            const masterData = Object.values(req.session.documentData).reduce((a, c) => ({ ...a, ...c }), {});
+            const masterData = Object.values(sessionDocs).reduce((a, c) => ({ ...a, ...c }), {});
             const fd = new FormData();
             fd.append('file', new Blob([req.file.buffer]), req.file.originalname);
             fd.append('master_data', JSON.stringify(masterData));
@@ -271,7 +266,7 @@ app.post('/validate-handwritten-form', upload.single('handwrittenForm'), async (
         if (ocrErr) return res.status(500).json({ error: ocrErr });
 
         // Step B: Semantic comparison
-        const masterData = Object.values(req.session.documentData).reduce((a, c) => ({ ...a, ...c }), {});
+        const masterData = Object.values(sessionDocs).reduce((a, c) => ({ ...a, ...c }), {});
         const arbPrompt  = `You are a data validation expert. Compare these two JSON objects:
 1. masterData (source of truth): ${JSON.stringify(masterData)}
 2. handwrittenData (from handwritten form, labels may differ or be in Marathi): ${JSON.stringify(handwrittenData)}

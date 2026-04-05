@@ -56,11 +56,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // ── Fetch session data & populate form ──────────────────
     try {
-        const response = await fetch(`${window.API_BASE_URL}/get-session-data`, { credentials: 'include' });
-        const result   = await response.json();
-
-        if (result.success && result.data) {
-            const sessionData = result.data; // { aadhar: {...}, pan: {...}, ... }
+        const rawData = localStorage.getItem('documentData');
+        
+        if (rawData) {
+            const sessionData = JSON.parse(rawData); // { aadhar: {...}, pan: {...}, ... }
 
             // Populate summary list
             for (const [docType, docData] of Object.entries(sessionData)) {
@@ -130,14 +129,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         submitBtn.textContent = 'Submitting…';
 
         try {
-            const response = await fetch(`${window.API_BASE_URL}/submit-form`, { method: 'POST', credentials: 'include' });
-            const result   = await response.json();
-
-            if (result.success) {
+            // Simulate submission since we operate purely on frontend state now
+            // Clear local storage equivalent to clearing session
+            localStorage.removeItem('documentData');
+            
+            setTimeout(() => {
                 successModal.classList.add('active');
-            } else {
-                throw new Error(result.message || 'Submission failed');
-            }
+            }, 1000);
         } catch (err) {
             showToast(`Submission failed: ${err.message}`, 'error');
             submitBtn.disabled   = false;

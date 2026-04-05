@@ -79,6 +79,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const result   = await response.json();
             if (!response.ok) throw new Error(result.error);
 
+            // ── Save to LocalStorage ──
+            let currentData = {};
+            try { currentData = JSON.parse(localStorage.getItem('documentData')) || {}; } catch (e) {}
+            currentData[docType] = result.extractedData;
+            localStorage.setItem('documentData', JSON.stringify(currentData));
+
             const listItem = document.createElement('li');
             listItem.className = 'uploaded-doc-item';
             listItem.innerHTML = `<span class="doc-check">✅</span> <strong>${docType.replace(/_/g, ' ')}</strong>: ${file.name}`;
