@@ -137,6 +137,8 @@ async function loadImageToCanvas(file, canvas, badge, previewWrap) {
 }
 
 // ─── ID Document upload ───────────────────────────────────
+idDropZone.addEventListener('click', () => idFileInput.click());
+
 idFileInput.addEventListener('change', async () => {
   const file = idFileInput.files[0];
   if (!file) return;
@@ -148,7 +150,7 @@ idFileInput.addEventListener('change', async () => {
   } catch { toast('Failed to load ID image.', 'toast-error'); }
 });
 idDropZone.addEventListener('dragover', e => { e.preventDefault(); idDropZone.classList.add('dov'); });
-idDropZone.addEventListener('dragleave', () => idDropZone.classList.remove('dov'));
+idDropZone.addEventListener('dragleave', () => idDropZone.classList.remove('drag-over'));
 idDropZone.addEventListener('drop', e => {
   e.preventDefault(); idDropZone.classList.remove('dov');
   const file = e.dataTransfer.files[0];
@@ -156,6 +158,8 @@ idDropZone.addEventListener('drop', e => {
 });
 
 // ─── Selfie upload ────────────────────────────────────────
+selfieDropZone.addEventListener('click', () => selfieFileInput.click());
+
 selfieFileInput.addEventListener('change', async () => {
   const file = selfieFileInput.files[0];
   if (!file) return;

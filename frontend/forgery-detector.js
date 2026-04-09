@@ -38,6 +38,9 @@ function handleFile(file) {
 }
 
 fileInput.addEventListener('change', () => handleFile(fileInput.files[0]));
+// ── Drag & Drop ──────────────────────────────────────────────
+dropZone.addEventListener('click', () => fileInput.click());
+
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
 dropZone.addEventListener('drop', e => {

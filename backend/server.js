@@ -117,7 +117,7 @@ app.use(express.static(path.join(__dirname, '..', 'frontend')));
 app.get('/form.html', (req, res) => res.sendFile(path.join(__dirname, '..', 'frontend', 'form.html')));
 
 // ─── Helpers ──────────────────────────────────────────────────
-const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp'];
+const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 const MAX_SIZE_MB  = 5;
 
 function validateUpload(file, res) {
@@ -126,7 +126,7 @@ function validateUpload(file, res) {
         return false;
     }
     if (!ALLOWED_MIME.includes(file.mimetype)) {
-        res.status(400).json({ error: 'Only JPEG, PNG, or WebP images are allowed.' });
+        res.status(400).json({ error: 'Only JPEG, PNG, WebP, or PDF files are allowed.' });
         return false;
     }
     if (file.size > MAX_SIZE_MB * 1024 * 1024) {

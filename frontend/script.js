@@ -46,6 +46,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── Drag and drop support ─────────────────────────────────
     if (dropZone) {
+        dropZone.addEventListener('click', () => uploader.click());
+        
         dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
         dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
         dropZone.addEventListener('drop', e => {
